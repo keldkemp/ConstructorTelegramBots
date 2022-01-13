@@ -1,9 +1,13 @@
 package keldkemp.telegram.telegram.handler;
 
+import keldkemp.telegram.models.*;
+import keldkemp.telegram.repositories.*;
+import keldkemp.telegram.telegram.domain.MessageTypes;
+import keldkemp.telegram.telegram.service.MessageService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -14,12 +18,26 @@ import java.util.List;
 @Component
 public class MessageHandler {
 
-    public List<? extends BotApiMethod<?>> handle(Update update) {
+    @Autowired
+    private MessageService messageService;
+
+    @Autowired
+    private TelegramBotsRepository tBotsRepository;
+
+    @Autowired
+    private TelegramStagesRepository tStagesRepository;
+
+    @Autowired
+    private TelegramButtonsRepository tButtonsRepository;
+
+
+    public List<? extends BotApiMethod<?>> handle(Update update, String token) {
+        TelegramBots bot = tBotsRepository.getTelegramBotsByBotToken(token);
         try {
             if (update.hasCallbackQuery()) {
-                return handleCallbackQuery(update.getCallbackQuery());
+                return handleCallbackQuery(update.getCallbackQuery(), bot);
             }
-            return handlePrivateMessage(update.getMessage());
+            return handlePrivateMessage(update.getMessage(), bot);
         } catch (RuntimeException e) {
             if (update.hasCallbackQuery()) {
                 return handleError(update.getCallbackQuery().getMessage(), e);
@@ -28,28 +46,23 @@ public class MessageHandler {
         }
     }
 
-    private List<? extends BotApiMethod<?>> handlePrivateMessage(Message message) {
-        long userId = message.getChatId();
-        String text = message.getText();
+    private List<? extends BotApiMethod<?>> handlePrivateMessage(Message message, TelegramBots bot) {
+        TelegramStages stage;
+        TelegramButtons button = tButtonsRepository.getTelegramButtonsByButtonText(message.getText());
 
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(String.valueOf(userId));
-        sendMessage.setText(text + "\ntest_private_msg");
+        if (button == null || button.getCallbackData() == null) {
+            stage = tStagesRepository.getFirstStage(bot.getId());
+        } else {
+            stage = button.getCallbackData();
+        }
 
-        return List.of(sendMessage);
+        return messageService.getMessages(stage, message, MessageTypes.SEND_MESSAGE);
     }
 
-    private List<? extends BotApiMethod<?>> handleCallbackQuery(CallbackQuery callbackQuery) {
-        Message message = callbackQuery.getMessage();
-        String data = callbackQuery.getData();
-        Integer messageId = message.getMessageId();
+    private List<? extends BotApiMethod<?>> handleCallbackQuery(CallbackQuery callbackQuery, TelegramBots bot) {
+        TelegramStages stage = tStagesRepository.getById(Long.parseLong(callbackQuery.getData()));
 
-        EditMessageText sendMessage = new EditMessageText();
-        sendMessage.setChatId(String.valueOf(message.getChatId()));
-        sendMessage.setMessageId(messageId);
-        sendMessage.setText("test_callback");
-
-        return List.of(sendMessage);
+        return messageService.getMessages(stage, callbackQuery.getMessage(), MessageTypes.EDIT_MESSAGE);
     }
 
     private List<? extends BotApiMethod<?>> handleError(Message message, RuntimeException e) {

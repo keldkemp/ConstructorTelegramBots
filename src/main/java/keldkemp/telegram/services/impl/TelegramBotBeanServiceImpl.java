@@ -7,11 +7,14 @@ import keldkemp.telegram.telegram.config.WebHookBot;
 import keldkemp.telegram.telegram.handler.MessageHandler;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 @Service("telegramBotBeanService")
 public class TelegramBotBeanServiceImpl extends BeanFactoryServiceImpl {
@@ -22,12 +25,21 @@ public class TelegramBotBeanServiceImpl extends BeanFactoryServiceImpl {
     @Autowired
     private SettingsValue settingsValue;
 
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Autowired
+    @Qualifier("telegramHandlerThread")
+    private ExecutorService executorService;
+
     @Override
     protected void createBean(String token) {
+        String url = settingsValue.getAppUrl() + "/webhook/" + token;
         TelegramBots bot = telegramBotsRepository.getTelegramBotsByBotToken(token);
         WebHookBot newBot = new WebHookBot(bot.getBotName(), bot.getBotToken(),
-                settingsValue.getAppUrl() + "/webhook/" + token, getHandler());
+                url, getHandler(), executorService);
         applicationContext.getBeanFactory().registerSingleton(token, newBot);
+        setWebhook(url, token);
     }
 
     @Override
@@ -44,6 +56,11 @@ public class TelegramBotBeanServiceImpl extends BeanFactoryServiceImpl {
     public void initAll() {
         List<TelegramBots> telegramBots = telegramBotsRepository.getTelegramBotsByIsActive(true);
         telegramBots.forEach(bot -> createBean(bot.getBotToken()));
+    }
+
+    private void setWebhook(String url, String token) {
+        String apiUrl = "https://api.telegram.org/bot" + token + "/setWebhook?url=" + url;
+        restTemplate.getForEntity(apiUrl, String.class);
     }
 
     private MessageHandler getHandler() {
