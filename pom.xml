@@ -21,6 +21,7 @@
         <org.telegram.version>5.5.0</org.telegram.version>
         <org.postgresql.version>42.3.1</org.postgresql.version>
         <org.apache.commons.version>3.12.0</org.apache.commons.version>
+        <net.ttddyy.datasource-proxy.version>1.7</net.ttddyy.datasource-proxy.version>
     </properties>
     <dependencies>
         <dependency>
@@ -69,6 +70,11 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>${org.apache.commons.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.ttddyy</groupId>
+            <artifactId>datasource-proxy</artifactId>
+            <version>${net.ttddyy.datasource-proxy.version}</version>
         </dependency>
     </dependencies>
 
