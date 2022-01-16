@@ -25,10 +25,18 @@ public interface UserService {
     String getHash(String input);
 
     /**
-     * Save user.
+     * Save current user.
      * @param user user
+     * @return Users
      */
-    void save(Users user);
+    Users save(Users user);
+
+    /**
+     * Create new user.
+     * @param user - user
+     * @return Users
+     */
+    Users createUser(Users user);
 
     /**
      * Get current user.

@@ -50,7 +50,7 @@ public class Users implements UserDetails {
         this.name = name;
     }
 
-    public boolean isLocked() {
+    public boolean getIsLocked() {
         return BooleanUtils.isTrue(isLocked);
     }
 
@@ -92,7 +92,7 @@ public class Users implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return !isLocked();
+        return !getIsLocked();
     }
 
     @Override
