@@ -21,5 +21,10 @@ public abstract class BeanFactoryServiceImpl implements BeanFactoryService {
         return getBean(name, Object.class);
     }
 
+    @Override
+    public boolean checkBean(String name) {
+        return applicationContext.containsBean(name);
+    }
+
     protected abstract void createBean(String name);
 }

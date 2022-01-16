@@ -3,6 +3,7 @@ package keldkemp.telegram.services.impl;
 import keldkemp.telegram.configs.SettingsValue;
 import keldkemp.telegram.models.TelegramBots;
 import keldkemp.telegram.repositories.TelegramBotsRepository;
+import keldkemp.telegram.services.LockService;
 import keldkemp.telegram.telegram.config.WebHookBot;
 import keldkemp.telegram.telegram.handler.MessageHandler;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -19,6 +20,8 @@ import java.util.concurrent.ExecutorService;
 @Service("telegramBotBeanService")
 public class TelegramBotBeanServiceImpl extends BeanFactoryServiceImpl {
 
+    final String LOCK_NAME = "TELEGRAM_BEAN_LOCK";
+
     @Autowired
     private TelegramBotsRepository telegramBotsRepository;
 
@@ -32,14 +35,22 @@ public class TelegramBotBeanServiceImpl extends BeanFactoryServiceImpl {
     @Qualifier("telegramHandlerThread")
     private ExecutorService executorService;
 
+    @Autowired
+    private LockService lockService;
+
     @Override
     protected void createBean(String token) {
-        String url = settingsValue.getAppUrl() + "/webhook/" + token;
-        TelegramBots bot = telegramBotsRepository.getTelegramBotsByBotToken(token);
-        WebHookBot newBot = new WebHookBot(bot.getBotName(), bot.getBotToken(),
-                url, getHandler(), executorService);
-        applicationContext.getBeanFactory().registerSingleton(token, newBot);
-        setWebhook(url, token);
+        lockService.doInLock(LOCK_NAME, () -> {
+            if (super.checkBean(token)) {
+                return;
+            }
+            String url = settingsValue.getAppUrl() + "/webhook/" + token;
+            TelegramBots bot = telegramBotsRepository.getTelegramBotsByBotToken(token);
+            WebHookBot newBot = new WebHookBot(bot.getBotName(), bot.getBotToken(),
+                    url, getHandler(), executorService);
+            applicationContext.getBeanFactory().registerSingleton(token, newBot);
+            setWebhook(url, token);
+        });
     }
 
     @Override
