@@ -63,6 +63,15 @@ public class TelegramBotBeanServiceImpl extends BeanFactoryServiceImpl {
         return super.getBean(token, WebHookBot.class);
     }
 
+    @Override
+    public void deleteBean(Object object) {
+        if (object instanceof TelegramBots) {
+            lockService.doInLock(LOCK_NAME, () -> super.deleteBean(((TelegramBots) object).getBotToken()));
+        } else {
+            throw new RuntimeException(object.getClass().getName() + " is not instanceof TelegramBots");
+        }
+    }
+
     @EventListener(ApplicationReadyEvent.class)
     public void initAll() {
         List<TelegramBots> telegramBots = telegramBotsRepository.getTelegramBotsByIsActive(true);

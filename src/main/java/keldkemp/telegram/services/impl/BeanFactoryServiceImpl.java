@@ -2,6 +2,7 @@ package keldkemp.telegram.services.impl;
 
 import keldkemp.telegram.services.BeanFactoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Service;
 
@@ -22,9 +23,16 @@ public abstract class BeanFactoryServiceImpl implements BeanFactoryService {
     }
 
     @Override
+    public void deleteBean(String name) {
+        ((DefaultListableBeanFactory) applicationContext.getBeanFactory()).destroySingleton(name);
+    }
+
+    @Override
     public boolean checkBean(String name) {
         return applicationContext.containsBean(name);
     }
 
     protected abstract void createBean(String name);
+
+    public abstract void deleteBean(Object object);
 }
