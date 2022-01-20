@@ -1,6 +1,8 @@
 package keldkemp.telegram.models;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class TelegramKeyboards {
@@ -15,6 +17,9 @@ public class TelegramKeyboards {
     @ManyToOne
     @JoinColumn(name = "stage_id", referencedColumnName = "id")
     private TelegramStages telegramStage;
+
+    @OneToMany(mappedBy = "telegramKeyboard")
+    private List<TelegramKeyboardRows> telegramKeyboardRows;
 
     public Long getId() {
         return id;
@@ -38,5 +43,32 @@ public class TelegramKeyboards {
 
     public void setTelegramStage(TelegramStages telegramStage) {
         this.telegramStage = telegramStage;
+    }
+
+    public List<TelegramKeyboardRows> getTelegramKeyboardRows() {
+        return telegramKeyboardRows;
+    }
+
+    public void setTelegramKeyboardRows(List<TelegramKeyboardRows> telegramKeyboardRows) {
+        this.telegramKeyboardRows = telegramKeyboardRows;
+    }
+
+    public void addTelegramKeyboardRow(TelegramKeyboardRows telegramKeyboardRow) {
+        if (telegramKeyboardRow != null) {
+            if (this.telegramKeyboardRows == null) {
+                this.telegramKeyboardRows = new ArrayList<>();
+            }
+            telegramKeyboardRow.setTelegramKeyboard(this);
+            if (!this.telegramKeyboardRows.contains(telegramKeyboardRow)) {
+                this.telegramKeyboardRows.add(telegramKeyboardRow);
+            }
+        }
+    }
+
+    public void addTelegramKeyboardRows(List<TelegramKeyboardRows> telegramKeyboardRows) {
+        if (telegramKeyboardRows == null) {
+            return;
+        }
+        telegramKeyboardRows.forEach(this::addTelegramKeyboardRow);
     }
 }
