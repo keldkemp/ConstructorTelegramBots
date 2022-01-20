@@ -1,10 +1,27 @@
 package keldkemp.telegram.services;
 
 import keldkemp.telegram.models.TelegramBots;
+import keldkemp.telegram.models.TelegramStages;
+import keldkemp.telegram.rest.dto.telegram.TelegramStageTransferDto;
 
 import java.util.List;
 
 public interface TelegramBotService {
+
+    /**
+     * Get telegram stages by botId for current user.
+     * @param botId bot id
+     * @return List TelegramStages
+     */
+    List<TelegramStages> getStages(Long botId);
+
+    /**
+     * Save telegram stages by botId for current user.
+     * @param telegramTransferDto stages
+     * @param botId bot id
+     * @return saved telegram stages
+     */
+    TelegramStageTransferDto saveStages(TelegramStageTransferDto telegramTransferDto, Long botId);
 
     /**
      * Get List telegram bots for current user.

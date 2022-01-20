@@ -1,14 +1,15 @@
-package keldkemp.telegram.rest.dto;
+package keldkemp.telegram.rest.dto.telegram;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class TelegramBotDto {
+public class TelegramKeyboardRowDto {
     private Long id;
-    private String botName;
-    private String botToken;
-    private Boolean isActive;
+    private Long ord;
+    private List<TelegramButtonDto> telegramButtons;
 }

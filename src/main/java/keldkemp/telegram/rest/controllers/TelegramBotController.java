@@ -1,6 +1,7 @@
 package keldkemp.telegram.rest.controllers;
 
-import keldkemp.telegram.rest.dto.TelegramBotDto;
+import keldkemp.telegram.rest.dto.telegram.TelegramBotDto;
+import keldkemp.telegram.rest.dto.telegram.TelegramStageTransferDto;
 import keldkemp.telegram.rest.mappers.TelegramMapper;
 import keldkemp.telegram.services.TelegramBotService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,18 @@ public class TelegramBotController {
     @PostMapping()
     public TelegramBotDto saveTelegramBot(@RequestBody TelegramBotDto telegramBotDto) {
         return telegramMapper.toTelegramBotDtoFromPo(telegramBotService.save(telegramMapper.toTelegramBotPoFromDto(telegramBotDto)));
+    }
+
+    @GetMapping("/{id}/stages")
+    public TelegramStageTransferDto getStages(@PathVariable Long id) {
+        TelegramStageTransferDto transferDto = new TelegramStageTransferDto();
+        transferDto.setTelegramStages(telegramMapper.toTelegramStagesDtoFromPo(telegramBotService.getStages(id)));
+        return transferDto;
+    }
+
+    @PostMapping("/{id}/stages")
+    public TelegramStageTransferDto saveStages(@PathVariable Long id, @RequestBody TelegramStageTransferDto telegramStageTransferDto) {
+        return telegramBotService.saveStages(telegramStageTransferDto, id);
     }
 
     @DeleteMapping("/{id}")
