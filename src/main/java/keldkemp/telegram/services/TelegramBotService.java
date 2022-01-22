@@ -1,12 +1,19 @@
 package keldkemp.telegram.services;
 
 import keldkemp.telegram.models.TelegramBots;
+import keldkemp.telegram.models.TelegramKeyboardTypes;
 import keldkemp.telegram.models.TelegramStages;
 import keldkemp.telegram.rest.dto.telegram.TelegramStageTransferDto;
 
 import java.util.List;
 
 public interface TelegramBotService {
+
+    /**
+     * Get List telegram keyboard types.
+     * @return List types
+     */
+    List<TelegramKeyboardTypes> getKeyboardTypes();
 
     /**
      * Get telegram stages by botId for current user.

@@ -46,6 +46,9 @@ public class TelegramBotServiceImpl implements TelegramBotService {
     private TelegramButtonsRepository tButtonsRepository;
 
     @Autowired
+    private TelegramKeyboardTypesRepository tKeyboardTypesRepository;
+
+    @Autowired
     private TelegramMapper telegramMapper;
 
     @Autowired
@@ -54,6 +57,11 @@ public class TelegramBotServiceImpl implements TelegramBotService {
 
     @Autowired
     private TransactionService transactionService;
+
+    @Override
+    public List<TelegramKeyboardTypes> getKeyboardTypes() {
+        return tKeyboardTypesRepository.findAll();
+    }
 
     @Override
     public List<TelegramBots> getBots() {

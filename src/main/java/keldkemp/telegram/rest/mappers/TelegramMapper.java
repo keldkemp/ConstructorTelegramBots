@@ -65,4 +65,8 @@ public abstract class TelegramMapper {
     public abstract List<TelegramKeyboardRowDto> toTelegramRowsDtoFromPo(List<TelegramKeyboardRows> rows);
 
     public abstract List<TelegramKeyboardRows> toTelegramRowsPoFromDto(List<TelegramKeyboardRowDto> rowsDto);
+
+    public abstract List<TelegramKeyboardTypeDto> toTelegramKeyboardTypesDtoFromPo(List<TelegramKeyboardTypes> types);
+
+    public abstract List<TelegramKeyboardTypes> toTelegramKeyboardTypesPoFromDto(List<TelegramKeyboardTypeDto> typesDto);
 }
