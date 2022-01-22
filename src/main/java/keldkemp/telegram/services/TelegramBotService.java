@@ -24,6 +24,12 @@ public interface TelegramBotService {
     TelegramStageTransferDto saveStages(TelegramStageTransferDto telegramTransferDto, Long botId);
 
     /**
+     * Delete telegram stages by botId for current user.
+     * @param botId bot id
+     */
+    void deleteStages(Long botId);
+
+    /**
      * Get List telegram bots for current user.
      * @return List
      */

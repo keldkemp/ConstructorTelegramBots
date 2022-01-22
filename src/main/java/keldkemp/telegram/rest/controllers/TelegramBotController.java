@@ -4,6 +4,7 @@ import keldkemp.telegram.rest.dto.telegram.TelegramBotDto;
 import keldkemp.telegram.rest.dto.telegram.TelegramStageTransferDto;
 import keldkemp.telegram.rest.mappers.TelegramMapper;
 import keldkemp.telegram.services.TelegramBotService;
+import keldkemp.telegram.util.ResponseEntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,9 +54,15 @@ public class TelegramBotController {
         return telegramBotService.saveStages(telegramStageTransferDto, id);
     }
 
+    @DeleteMapping("/{id}/stages")
+    public ResponseEntity<?> deleteStages(@PathVariable Long id) {
+        telegramBotService.deleteStages(id);
+        return ResponseEntityUtils.okRequest();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTelegramBot(@PathVariable Long id) {
         telegramBotService.delete(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntityUtils.okRequest();
     }
 }

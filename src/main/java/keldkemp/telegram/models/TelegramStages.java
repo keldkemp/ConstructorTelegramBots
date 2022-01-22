@@ -20,13 +20,13 @@ public class TelegramStages {
     @JoinColumn(name = "telegram_bot_id", referencedColumnName = "id")
     private TelegramBots telegramBot;
 
-    @OneToMany(mappedBy = "telegramStage", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "telegramStage", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     private List<TelegramMessages> telegramMessages;
 
-    @OneToMany(mappedBy = "telegramStage", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "telegramStage", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     private List<TelegramKeyboards> telegramKeyboards;
 
-    @OneToMany(mappedBy = "callbackData", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "callbackData", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     private List<TelegramButtons> telegramButtons;
 
     public Long getId() {

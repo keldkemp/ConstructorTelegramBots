@@ -18,7 +18,7 @@ public class TelegramKeyboards {
     @JoinColumn(name = "stage_id", referencedColumnName = "id")
     private TelegramStages telegramStage;
 
-    @OneToMany(mappedBy = "telegramKeyboard")
+    @OneToMany(mappedBy = "telegramKeyboard", cascade = CascadeType.REMOVE)
     private List<TelegramKeyboardRows> telegramKeyboardRows;
 
     public Long getId() {

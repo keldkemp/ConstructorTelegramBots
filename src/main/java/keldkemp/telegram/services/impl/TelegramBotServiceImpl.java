@@ -83,6 +83,8 @@ public class TelegramBotServiceImpl implements TelegramBotService {
     public void delete(Long id) {
         TelegramBots bot = tBotsRepository.getById(id);
         checkUser(bot);
+
+        deleteStages(id);
         tBotsRepository.deleteById(id);
     }
 
@@ -196,6 +198,15 @@ public class TelegramBotServiceImpl implements TelegramBotService {
         TelegramStageTransferDto stageTransferDto = new TelegramStageTransferDto();
         stageTransferDto.setTelegramStages(telegramMapper.toTelegramStagesDtoFromPo(stages));
         return stageTransferDto;
+    }
+
+    @Override
+    @Transactional
+    public void deleteStages(Long botId) {
+        TelegramBots bot = tBotsRepository.getById(botId);
+        checkUser(bot);
+
+        tStagesRepository.deleteAllByTelegramBot(bot);
     }
 
     private List<TelegramStages> saveStages(List<TelegramStages> stages, TelegramBots bot) {
