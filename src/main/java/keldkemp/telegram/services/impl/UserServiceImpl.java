@@ -70,6 +70,19 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public Users changePassword(Users user) {
+        if (isNewObject(user)) {
+            throw new RuntimeException("User registration in another api method");
+        }
+        validateUser(user);
+
+        user.setPassword(getHash(user.getPassword()));
+        Asserts.check(user.getId().equals(getCurrentUser().getId()), "Error modify user");
+        return usersRepository.save(user);
+    }
+
+    @Override
+    @Transactional
     public Users save(Users user) {
         if (isNewObject(user)) {
             throw new RuntimeException("User registration in another api method");
@@ -93,6 +106,7 @@ public class UserServiceImpl implements UserService {
         }
         validateUser(user);
 
+        user.setUsername(user.getUsername().toLowerCase());
         user.setIsLocked(false);
         user.setPassword(getHash(user.getPassword()));
         return usersRepository.save(user);

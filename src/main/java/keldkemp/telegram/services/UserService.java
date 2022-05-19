@@ -25,6 +25,13 @@ public interface UserService {
     String getHash(String input);
 
     /**
+     * Change password, current_user.
+     * @param user user
+     * @return user
+     */
+    Users changePassword(Users user);
+
+    /**
      * Save current user.
      * @param user user
      * @return Users
