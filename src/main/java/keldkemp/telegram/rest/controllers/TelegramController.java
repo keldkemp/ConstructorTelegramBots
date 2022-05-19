@@ -25,18 +25,21 @@ public class TelegramController {
 
     @PostMapping("/webhook/{token}")
     public ResponseEntity<?> onUpdateReceived(HttpServletRequest request, @RequestBody Update update, @PathVariable String token) {
+        //TODO: За прокси надо подумать как сделать
+        /*
         try {
-            if (!checkDomainName(request.getRequestURL())) {
+            if (!checkDomainName(request.getRequestURL().toString()) || !checkDomainName(request.getHeader("x-forwarded-proto"))) {
                 return ResponseEntityUtils.badRequest();
             }
         } catch (Exception ignored) {}
+         */
         WebHookBot bot = telegramBotsBean.getBean(token);
         bot.onWebhookUpdateReceived(update);
         return null;
     }
 
-    private boolean checkDomainName(StringBuffer url) throws URISyntaxException {
-        URI uri = new URI(url.toString());
+    private boolean checkDomainName(String url) throws URISyntaxException {
+        URI uri = new URI(url);
         String domain = uri.getHost();
         return domain.endsWith("ngrok.io") || domain.endsWith("telegram.org");
     }
