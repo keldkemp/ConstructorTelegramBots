@@ -5,6 +5,7 @@ import keldkemp.telegram.models.TelegramButtons;
 import keldkemp.telegram.models.TelegramKeyboardRows;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
@@ -22,7 +23,7 @@ public interface TelegramButtonsRepository extends JpaRepository<TelegramButtons
             "where s.telegramBot = :bot " +
             "and b.buttonText = :buttonText " +
             "and k.telegramKeyboardType.name = 'ReplyKeyboardMarkup'")
-    TelegramButtons getTelegramButtonsByButtonTextAndBotAndReplyType(String buttonText,TelegramBots bot);
+    TelegramButtons getTelegramButtonsByButtonTextAndBotAndReplyType(@Param("buttonText") String buttonText, @Param("bot") TelegramBots bot);
 
     void deleteAllByIdNotInAndTelegramKeyboardRowTelegramKeyboardTelegramStageTelegramBot(Collection<Long> id, TelegramBots bot);
 }

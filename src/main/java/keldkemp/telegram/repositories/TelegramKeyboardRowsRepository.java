@@ -4,6 +4,7 @@ import keldkemp.telegram.models.TelegramBots;
 import keldkemp.telegram.models.TelegramKeyboardRows;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
@@ -15,7 +16,7 @@ public interface TelegramKeyboardRowsRepository extends JpaRepository<TelegramKe
             "inner join TelegramKeyboards k on (s.id = k.telegramStage.id) " +
             "inner join TelegramKeyboardRows r on (k.id = r.telegramKeyboard.id) " +
             "where r.id = :rowId")
-    TelegramBots getTelegramBotByRow(Long rowId);
+    TelegramBots getTelegramBotByRow(@Param("rowId") Long rowId);
 
     List<TelegramKeyboardRows> getTelegramKeyboardRowsByTelegramKeyboardIdOrderByOrd(Long keyboardId);
 
