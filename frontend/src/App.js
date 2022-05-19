@@ -2,6 +2,8 @@ import React from "react";
 import { BrowserRouter } from "react-router-dom";
 import {SimpleRoutes} from "./SimpleRoutes";
 import 'materialize-css';
+import 'antd/dist/antd.css';
+import {NavBar} from "./components/NavBar";
 
 function App() {
   //TODO
@@ -10,6 +12,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      { isAuth && <NavBar/> }
       {routes}
     </BrowserRouter>
   );

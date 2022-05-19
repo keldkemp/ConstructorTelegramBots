@@ -6,6 +6,7 @@ import {BotStagesPage} from "./pages/BotStagesPage";
 import {ProfilePage} from "./pages/ProfilePage";
 import {BotDetailPage} from "./pages/BotDetailPage";
 import {RegisterPage} from "./pages/RegisterPage";
+import {NewBotsPage} from "./pages/NewBotsPage";
 
 export const SimpleRoutes = isAuth => {
     if (isAuth) {
@@ -13,6 +14,7 @@ export const SimpleRoutes = isAuth => {
             <Routes>
                 <Route path='/profile' element={<ProfilePage/>} />
                 <Route path='/bots' element={<BotsPage/>} />
+                <Route path='/bots/new' element={<NewBotsPage/>} />
                 <Route path='/bots/:id' element={<BotDetailPage/>} />
                 <Route path='/bots/:id/stages' element={<BotStagesPage/>} />
                 <Route path='/*' element={<Navigate replace to='/bots' />} />
