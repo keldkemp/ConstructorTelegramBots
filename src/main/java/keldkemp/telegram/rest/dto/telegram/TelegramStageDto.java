@@ -18,4 +18,7 @@ public class TelegramStageDto {
     private List<TelegramMessageDto> telegramMessages;
     private List<TelegramKeyboardDto> telegramKeyboards;
     private TelegramBotDto telegramBot;
+    private String frontOptions;
+    private String frontPrefixReplace;
+    private String frontNodeId;
 }

@@ -25,6 +25,9 @@ public class TelegramButtons {
     @JoinColumn(name = "keyboard_row_id", referencedColumnName = "id")
     private TelegramKeyboardRows telegramKeyboardRow;
 
+    @Column(name = "front_node_id")
+    private String frontNodeId;
+
     public Long getId() {
         return id;
     }
@@ -71,5 +74,13 @@ public class TelegramButtons {
 
     public void setTelegramKeyboardRow(TelegramKeyboardRows telegramKeyboardRow) {
         this.telegramKeyboardRow = telegramKeyboardRow;
+    }
+
+    public String getFrontNodeId() {
+        return frontNodeId;
+    }
+
+    public void setFrontNodeId(String frontNodeId) {
+        this.frontNodeId = frontNodeId;
     }
 }

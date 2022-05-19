@@ -53,6 +53,16 @@ public class KeyboardServiceImpl implements KeyboardService {
         return null;
     }
 
+    @Override
+    public KeyboardTypes getKeyboardType(TelegramStages stage) {
+        TelegramKeyboards keyboard = tKeyboardsRepository.getTelegramKeyboardsByTelegramStageId(stage.getId());
+        if (keyboard == null) {
+            return null;
+        }
+        return keyboard.getTelegramKeyboardType().getName().equals("InlineKeyboardMarkup") ?
+                KeyboardTypes.INLINE_KEYBOARD : KeyboardTypes.REPLY_KEYBOARD;
+    }
+
     public <T extends ReplyKeyboard> T getKeyboard(TelegramKeyboards stageKeyboard, Class<T> tClass) {
         if (tClass == InlineKeyboardMarkup.class) {
             return tClass.cast(getInlineKeyboard(stageKeyboard));

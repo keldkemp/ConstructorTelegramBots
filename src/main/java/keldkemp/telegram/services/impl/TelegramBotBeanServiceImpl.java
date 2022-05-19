@@ -46,6 +46,9 @@ public class TelegramBotBeanServiceImpl extends BeanFactoryServiceImpl {
             }
             String url = settingsValue.getAppUrl() + "/webhook/" + token;
             TelegramBots bot = telegramBotsRepository.getTelegramBotsByBotToken(token);
+            if (!bot.getIsActive()) {
+                return;
+            }
             WebHookBot newBot = new WebHookBot(bot.getBotName(), bot.getBotToken(),
                     url, getHandler(), executorService);
             applicationContext.getBeanFactory().registerSingleton(token, newBot);
@@ -66,7 +69,11 @@ public class TelegramBotBeanServiceImpl extends BeanFactoryServiceImpl {
     @Override
     public void deleteBean(Object object) {
         if (object instanceof TelegramBots) {
-            lockService.doInLock(LOCK_NAME, () -> super.deleteBean(((TelegramBots) object).getBotToken()));
+            lockService.doInLock(LOCK_NAME, () -> {
+                String token = ((TelegramBots) object).getBotToken();
+                super.deleteBean(token);
+                deleteWebhook(token);
+            });
         } else {
             throw new RuntimeException(object.getClass().getName() + " is not instanceof TelegramBots");
         }
@@ -81,6 +88,15 @@ public class TelegramBotBeanServiceImpl extends BeanFactoryServiceImpl {
     private void setWebhook(String url, String token) {
         String apiUrl = "https://api.telegram.org/bot" + token + "/setWebhook?url=" + url;
         restTemplate.getForEntity(apiUrl, String.class);
+    }
+
+    private void deleteWebhook(String token) {
+        String apiUrl = "https://api.telegram.org/bot" + token + "/deleteWebhook";
+        try {
+            restTemplate.getForEntity(apiUrl, String.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Нету бота с таким токеном!", e);
+        }
     }
 
     private MessageHandler getHandler() {

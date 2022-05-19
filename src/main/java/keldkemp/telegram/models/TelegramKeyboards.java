@@ -21,6 +21,9 @@ public class TelegramKeyboards {
     @OneToMany(mappedBy = "telegramKeyboard", cascade = CascadeType.REMOVE)
     private List<TelegramKeyboardRows> telegramKeyboardRows;
 
+    @Column(name = "front_node_id")
+    private String frontNodeId;
+
     public Long getId() {
         return id;
     }
@@ -70,5 +73,13 @@ public class TelegramKeyboards {
             return;
         }
         telegramKeyboardRows.forEach(this::addTelegramKeyboardRow);
+    }
+
+    public String getFrontNodeId() {
+        return frontNodeId;
+    }
+
+    public void setFrontNodeId(String frontNodeId) {
+        this.frontNodeId = frontNodeId;
     }
 }

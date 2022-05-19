@@ -2,6 +2,7 @@ package keldkemp.telegram.telegram.config;
 
 import keldkemp.telegram.telegram.handler.MessageHandler;
 import org.telegram.telegrambots.bots.TelegramWebhookBot;
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -50,10 +51,17 @@ public class WebHookBot extends TelegramWebhookBot {
     //TODO: Refactor
     private void handleMessage(Update update) {
         List<? extends BotApiMethod<?>> messages = messageHandler.handle(update, getBotToken());
+        if (update.hasCallbackQuery()) {
+            try {
+                execute(new AnswerCallbackQuery(update.getCallbackQuery().getId()));
+            } catch (Exception ignored) {
+
+            }
+        }
         messages.forEach(message -> {
             try {
                 execute(message);
-            } catch (Exception e) {
+            } catch (Exception ignored) {
 
             }
         });

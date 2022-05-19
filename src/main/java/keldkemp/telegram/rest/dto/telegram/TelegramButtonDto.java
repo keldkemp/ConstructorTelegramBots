@@ -12,4 +12,5 @@ public class TelegramButtonDto {
     private String buttonLink;
     private Long buttonOrd;
     private TelegramStageDto callbackData;
+    private String frontNodeId;
 }

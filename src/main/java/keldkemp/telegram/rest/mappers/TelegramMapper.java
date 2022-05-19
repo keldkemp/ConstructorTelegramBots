@@ -48,6 +48,7 @@ public abstract class TelegramMapper {
         telegramButtonDto.setButtonLink( button.getButtonLink() );
         telegramButtonDto.setButtonOrd( button.getButtonOrd() );
         telegramButtonDto.setCallbackData( telegramStageDto );
+        telegramButtonDto.setFrontNodeId( button.getFrontNodeId() );
 
         return telegramButtonDto;
     }

@@ -4,8 +4,11 @@ import keldkemp.telegram.models.*;
 import keldkemp.telegram.repositories.*;
 import keldkemp.telegram.telegram.domain.MessageTypes;
 import keldkemp.telegram.telegram.service.MessageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
@@ -17,6 +20,8 @@ import java.util.List;
 //TODO: Refactor
 @Component
 public class MessageHandler {
+
+    Logger logger = LoggerFactory.getLogger(MessageHandler.class);
 
     @Autowired
     private MessageService messageService;
@@ -30,7 +35,7 @@ public class MessageHandler {
     @Autowired
     private TelegramButtonsRepository tButtonsRepository;
 
-
+    @Transactional
     public List<? extends BotApiMethod<?>> handle(Update update, String token) {
         TelegramBots bot = tBotsRepository.getTelegramBotsByBotToken(token);
         try {
@@ -48,7 +53,7 @@ public class MessageHandler {
 
     private List<? extends BotApiMethod<?>> handlePrivateMessage(Message message, TelegramBots bot) {
         TelegramStages stage;
-        TelegramButtons button = tButtonsRepository.getTelegramButtonsByButtonText(message.getText());
+        TelegramButtons button = tButtonsRepository.getTelegramButtonsByButtonTextAndBotAndReplyType(message.getText(), bot);
 
         if (button == null || button.getCallbackData() == null) {
             stage = tStagesRepository.getFirstStage(bot.getId());

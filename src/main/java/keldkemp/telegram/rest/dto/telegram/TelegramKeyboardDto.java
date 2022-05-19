@@ -12,4 +12,5 @@ public class TelegramKeyboardDto {
     private Long id;
     private TelegramKeyboardTypeDto telegramKeyboardType;
     private List<TelegramKeyboardRowDto> telegramKeyboardRows;
+    private String frontNodeId;
 }

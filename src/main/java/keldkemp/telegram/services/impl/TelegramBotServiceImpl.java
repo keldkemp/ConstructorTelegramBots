@@ -1,8 +1,27 @@
 package keldkemp.telegram.services.impl;
 
-import keldkemp.telegram.models.*;
-import keldkemp.telegram.repositories.*;
-import keldkemp.telegram.rest.dto.telegram.*;
+
+import keldkemp.telegram.models.TelegramBots;
+import keldkemp.telegram.models.TelegramButtons;
+import keldkemp.telegram.models.TelegramKeyboardRows;
+import keldkemp.telegram.models.TelegramKeyboardTypes;
+import keldkemp.telegram.models.TelegramKeyboards;
+import keldkemp.telegram.models.TelegramMessages;
+import keldkemp.telegram.models.TelegramStages;
+import keldkemp.telegram.repositories.TelegramBotsRepository;
+import keldkemp.telegram.repositories.TelegramButtonsRepository;
+import keldkemp.telegram.repositories.TelegramKeyboardRowsRepository;
+import keldkemp.telegram.repositories.TelegramKeyboardTypesRepository;
+import keldkemp.telegram.repositories.TelegramKeyboardsRepository;
+import keldkemp.telegram.repositories.TelegramMessagesRepository;
+import keldkemp.telegram.repositories.TelegramStagesRepository;
+import keldkemp.telegram.rest.dto.telegram.TelegramBotDto;
+import keldkemp.telegram.rest.dto.telegram.TelegramButtonDto;
+import keldkemp.telegram.rest.dto.telegram.TelegramKeyboardDto;
+import keldkemp.telegram.rest.dto.telegram.TelegramKeyboardRowDto;
+import keldkemp.telegram.rest.dto.telegram.TelegramMessageDto;
+import keldkemp.telegram.rest.dto.telegram.TelegramStageDto;
+import keldkemp.telegram.rest.dto.telegram.TelegramStageTransferDto;
 import keldkemp.telegram.rest.mappers.TelegramMapper;
 import keldkemp.telegram.services.BeanFactoryService;
 import keldkemp.telegram.services.TelegramBotService;
@@ -14,10 +33,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
 
 @Service
 public class TelegramBotServiceImpl implements TelegramBotService {
@@ -79,9 +105,23 @@ public class TelegramBotServiceImpl implements TelegramBotService {
     public TelegramBots save(TelegramBots bot) {
         bot.setUser(userService.getCurrentUser());
         validate(bot);
+        TelegramBots saveBot;
 
-        TelegramBots saveBot =  transactionService.doInTransactionAnnotation(() -> tBotsRepository.save(bot));
+        //Check Token
+        if (isNewBot(bot)) {
+            telegramBeanFactory.deleteBean(bot);
+        }
+
+        try {
+            saveBot = transactionService.doInTransactionAnnotation(() -> tBotsRepository.save(bot));
+        } catch (DataIntegrityViolationException e) {
+            throw new RuntimeException("Бот с таким токеном уже создан!", e);
+        }
+
         telegramBeanFactory.deleteBean(saveBot);
+        if (Boolean.TRUE == saveBot.getIsActive()) {
+            telegramBeanFactory.getBean(saveBot.getBotToken());
+        }
 
         return saveBot;
     }
@@ -97,6 +137,7 @@ public class TelegramBotServiceImpl implements TelegramBotService {
     }
 
     @Override
+    @Transactional
     public List<TelegramStages> getStages(Long botId) {
         TelegramBots bot = tBotsRepository.getById(botId);
         checkUser(bot);
@@ -105,6 +146,7 @@ public class TelegramBotServiceImpl implements TelegramBotService {
     }
 
     //TODO: Порядок сохранения Этапов надо учесть.
+    // Валидацию всего и вся сделать надо.
     @Override
     @Transactional
     public TelegramStageTransferDto saveStages(TelegramStageTransferDto telegramTransferDto, Long botId) {
@@ -124,13 +166,25 @@ public class TelegramBotServiceImpl implements TelegramBotService {
                 telegramStage.setPreviousStage(getStageByFictiveId(telegramTransferDto, stage.getPreviousStage()).getId());
             }
             telegramStage.setTelegramBot(bot);
-
+            telegramStage.setFrontOptions(stage.getFrontOptions());
+            telegramStage.setFrontNodeId(stage.getFrontNodeId());
             telegramStage = tStagesRepository.saveAndFlush(telegramStage);
+            //Double save
+            if (stage.getId() == null) {
+                String frontOptions = stage.getFrontOptions();
+                if (frontOptions != null) {
+                    frontOptions = frontOptions.replace(stage.getFrontPrefixReplace(), telegramStage.getId().toString());
+                }
+                telegramStage.setFrontOptions(frontOptions);
+                telegramStage = tStagesRepository.saveAndFlush(telegramStage);
+            }
+
             stagesHashMap.put(telegramStage.getId(), telegramStage);
 
             stage.setId(telegramStage.getId());
             stage.setTelegramBot(botDto);
             stage.setPreviousStage(telegramStage.getPreviousStage());
+            stage.setFrontOptions(telegramStage.getFrontOptions());
         });
 
         telegramTransferDto.getTelegramStages().forEach(stageDto -> {
@@ -145,59 +199,61 @@ public class TelegramBotServiceImpl implements TelegramBotService {
 
             //save TelegramKeyboards
             List<TelegramKeyboardDto> keyboardsDto = stageDto.getTelegramKeyboards();
-            List<TelegramKeyboards> keyboards = telegramMapper.toTelegramKeyboardsPoFromDto(keyboardsDto);
-            keyboards.forEach(k -> {
-                k.setTelegramStage(stagesHashMap.get(stageDto.getId()));
-                k.setTelegramKeyboardRows(null);
-            });
-            keyboards = saveKeyboards(keyboards, bot);
-            for (int i = 0; keyboardsDto.size() > i; i++) {
-                keyboardsDto.get(i).setId(keyboards.get(i).getId());
-            }
-
-            keyboardsDto.forEach(k -> {
-                //save TelegramKeyboardRows
-                List<TelegramKeyboardRowDto> rowsDto = k.getTelegramKeyboardRows();
-                List<TelegramKeyboardRows> rows = telegramMapper.toTelegramRowsPoFromDto(rowsDto);
-                rows.forEach(r -> {
-                    r.setTelegramKeyboard(tKeyboardsRepository.getById(k.getId()));
-                    r.setTelegramButtons(null);
+            if (keyboardsDto != null) {
+                List<TelegramKeyboards> keyboards = telegramMapper.toTelegramKeyboardsPoFromDto(keyboardsDto);
+                keyboards.forEach(k -> {
+                    k.setTelegramStage(stagesHashMap.get(stageDto.getId()));
+                    k.setTelegramKeyboardRows(null);
                 });
-                rows = saveKeyboardRows(rows, bot);
-                for (int i = 0; rowsDto.size() > i; i++) {
-                    rowsDto.get(i).setId(rows.get(i).getId());
+                keyboards = saveKeyboards(keyboards, bot);
+                for (int i = 0; keyboardsDto.size() > i; i++) {
+                    keyboardsDto.get(i).setId(keyboards.get(i).getId());
                 }
 
-                rowsDto.forEach(r -> {
-                    //save TelegramButtons
-                    List<TelegramButtonDto> buttonsDto = r.getTelegramButtons();
-                    buttonsDto.forEach(bDto -> {
-                        if (bDto.getCallbackData() != null
-                                && (bDto.getCallbackData().getId() != null || bDto.getCallbackData().getFictiveId() != null)) {
-                            bDto.getCallbackData().setId(getStageByFictiveId(telegramTransferDto,
-                                    bDto.getCallbackData().getFictiveId() == null ?
-                                            bDto.getCallbackData().getId() :
-                                            bDto.getCallbackData().getFictiveId()
-                                    ).getId()
-                            );
-                        }
+                keyboardsDto.forEach(k -> {
+                    //save TelegramKeyboardRows
+                    List<TelegramKeyboardRowDto> rowsDto = k.getTelegramKeyboardRows();
+                    List<TelegramKeyboardRows> rows = telegramMapper.toTelegramRowsPoFromDto(rowsDto);
+                    rows.forEach(r -> {
+                        r.setTelegramKeyboard(tKeyboardsRepository.getById(k.getId()));
+                        r.setTelegramButtons(null);
                     });
-
-                    List<TelegramButtons> buttons = telegramMapper.toTelegramButtonsPoFromDto(buttonsDto);
-                    buttons.forEach(b -> {
-                        b.setTelegramKeyboardRow(tKeyboardRowsRepository.getById(r.getId()));
-                        if (b.getCallbackData() != null && b.getCallbackData().getId() != null) {
-                            b.setCallbackData(stagesHashMap.get(b.getCallbackData().getId()));
-                        } else {
-                            b.setCallbackData(null);
-                        }
-                    });
-                    buttons = saveButtons(buttons, bot);
-                    for (int i = 0; buttonsDto.size() > i; i++) {
-                        buttonsDto.get(i).setId(buttons.get(i).getId());
+                    rows = saveKeyboardRows(rows, bot);
+                    for (int i = 0; rowsDto.size() > i; i++) {
+                        rowsDto.get(i).setId(rows.get(i).getId());
                     }
+
+                    rowsDto.forEach(r -> {
+                        //save TelegramButtons
+                        List<TelegramButtonDto> buttonsDto = r.getTelegramButtons();
+                        buttonsDto.forEach(bDto -> {
+                            if (bDto.getCallbackData() != null
+                                    && (bDto.getCallbackData().getId() != null || bDto.getCallbackData().getFictiveId() != null)) {
+                                bDto.getCallbackData().setId(getStageByFictiveId(telegramTransferDto,
+                                                bDto.getCallbackData().getFictiveId() == null ?
+                                                        bDto.getCallbackData().getId() :
+                                                        bDto.getCallbackData().getFictiveId()
+                                        ).getId()
+                                );
+                            }
+                        });
+
+                        List<TelegramButtons> buttons = telegramMapper.toTelegramButtonsPoFromDto(buttonsDto);
+                        buttons.forEach(b -> {
+                            b.setTelegramKeyboardRow(tKeyboardRowsRepository.getById(r.getId()));
+                            if (b.getCallbackData() != null && b.getCallbackData().getId() != null) {
+                                b.setCallbackData(stagesHashMap.get(b.getCallbackData().getId()));
+                            } else {
+                                b.setCallbackData(null);
+                            }
+                        });
+                        buttons = saveButtons(buttons, bot);
+                        for (int i = 0; buttonsDto.size() > i; i++) {
+                            buttonsDto.get(i).setId(buttons.get(i).getId());
+                        }
+                    });
                 });
-            });
+            }
         });
 
         List<TelegramStages> stages = telegramMapper.toTelegramStagesPoFromDto(telegramTransferDto.getTelegramStages());
@@ -296,11 +352,13 @@ public class TelegramBotServiceImpl implements TelegramBotService {
         stages.forEach(stage -> {
             messageIds.addAll(stage.getTelegramMessages().stream().map(TelegramMessages::getId).toList());
 
-            stage.getTelegramKeyboards().forEach(keyboard -> {
-                keyboard.getTelegramKeyboardRows().forEach(row -> buttonIds.addAll(row.getTelegramButtons().stream().map(TelegramButtons::getId).toList()));
-                rowIds.addAll(keyboard.getTelegramKeyboardRows().stream().map(TelegramKeyboardRows::getId).toList());
-            });
-            keyboardIds.addAll(stage.getTelegramKeyboards().stream().map(TelegramKeyboards::getId).toList());
+            if (stage.getTelegramKeyboards() != null) {
+                stage.getTelegramKeyboards().forEach(keyboard -> {
+                    keyboard.getTelegramKeyboardRows().forEach(row -> buttonIds.addAll(row.getTelegramButtons().stream().map(TelegramButtons::getId).toList()));
+                    rowIds.addAll(keyboard.getTelegramKeyboardRows().stream().map(TelegramKeyboardRows::getId).toList());
+                });
+                keyboardIds.addAll(stage.getTelegramKeyboards().stream().map(TelegramKeyboards::getId).toList());
+            }
         });
 
         tMessagesRepository.deleteAllByIdNotInAndTelegramStageTelegramBot(messageIds, bot);
@@ -324,8 +382,8 @@ public class TelegramBotServiceImpl implements TelegramBotService {
     }
 
     private void validate(TelegramBots bot) {
-        Asserts.notNull(bot.getBotToken(), "Bot token");
-        Asserts.notNull(bot.getBotName(), "Bot name");
+        Asserts.check(StringUtils.isNotEmpty(bot.getBotToken()), "Bot token is empty");
+        Asserts.check(StringUtils.isNotEmpty(bot.getBotName()), "Bot name is empty");
         checkUser(bot);
     }
 

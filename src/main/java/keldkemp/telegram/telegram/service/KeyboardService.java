@@ -9,4 +9,6 @@ public interface KeyboardService {
     <T extends ReplyKeyboard> T  getKeyboard(TelegramStages stage, KeyboardTypes type);
 
     <T extends ReplyKeyboard> T getKeyboard(TelegramStages stage);
+
+    KeyboardTypes getKeyboardType(TelegramStages stage);
 }

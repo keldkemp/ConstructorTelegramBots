@@ -29,6 +29,13 @@ public class TelegramStages {
     @OneToMany(mappedBy = "callbackData", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     private List<TelegramButtons> telegramButtons;
 
+    @Lob
+    @Column(name = "front_options")
+    private String frontOptions;
+
+    @Column(name = "front_node_id")
+    private String frontNodeId;
+
     public Long getId() {
         return id;
     }
@@ -127,5 +134,21 @@ public class TelegramStages {
 
     public void setTelegramButtons(List<TelegramButtons> telegramButtons) {
         this.telegramButtons = telegramButtons;
+    }
+
+    public String getFrontOptions() {
+        return frontOptions;
+    }
+
+    public void setFrontOptions(String frontOptions) {
+        this.frontOptions = frontOptions;
+    }
+
+    public String getFrontNodeId() {
+        return frontNodeId;
+    }
+
+    public void setFrontNodeId(String frontNodeId) {
+        this.frontNodeId = frontNodeId;
     }
 }
