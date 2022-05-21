@@ -1,6 +1,10 @@
 package keldkemp.telegram.models;
 
+import org.apache.commons.lang3.BooleanUtils;
+import org.hibernate.annotations.ColumnDefault;
+
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,12 +33,18 @@ public class TelegramStages {
     @OneToMany(mappedBy = "callbackData", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     private List<TelegramButtons> telegramButtons;
 
-    @Lob
-    @Column(name = "front_options")
-    private String frontOptions;
-
     @Column(name = "front_node_id")
     private String frontNodeId;
+
+    @Column(name = "is_schedule_active")
+    @ColumnDefault("false")
+    private Boolean isScheduleActive;
+
+    @Column(name = "schedule_cron")
+    private String scheduleCron;
+
+    @Column(name = "schedule_data_time")
+    private LocalDateTime scheduleDateTime;
 
     public Long getId() {
         return id;
@@ -136,19 +146,35 @@ public class TelegramStages {
         this.telegramButtons = telegramButtons;
     }
 
-    public String getFrontOptions() {
-        return frontOptions;
-    }
-
-    public void setFrontOptions(String frontOptions) {
-        this.frontOptions = frontOptions;
-    }
-
     public String getFrontNodeId() {
         return frontNodeId;
     }
 
     public void setFrontNodeId(String frontNodeId) {
         this.frontNodeId = frontNodeId;
+    }
+
+    public boolean getIsScheduleActive() {
+        return BooleanUtils.isTrue(isScheduleActive);
+    }
+
+    public void setIsScheduleActive(Boolean scheduleActive) {
+        isScheduleActive = scheduleActive;
+    }
+
+    public String getScheduleCron() {
+        return scheduleCron;
+    }
+
+    public void setScheduleCron(String scheduleCron) {
+        this.scheduleCron = scheduleCron;
+    }
+
+    public LocalDateTime getScheduleDateTime() {
+        return scheduleDateTime;
+    }
+
+    public void setScheduleDateTime(LocalDateTime scheduleDateTime) {
+        this.scheduleDateTime = scheduleDateTime;
     }
 }

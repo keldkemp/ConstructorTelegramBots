@@ -25,4 +25,8 @@ public class TelegramBots {
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private Users user;
+
+    @Lob
+    @Column(name = "front_options")
+    private String frontOptions;
 }

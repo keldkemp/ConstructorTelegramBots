@@ -66,4 +66,14 @@ public class WebHookBot extends TelegramWebhookBot {
             }
         });
     }
+
+    public void execute(List<? extends BotApiMethod<?>> messages) {
+        messages.forEach(message -> {
+            try {
+                execute(message);
+            } catch (Exception ignored) {
+
+            }
+        });
+    }
 }

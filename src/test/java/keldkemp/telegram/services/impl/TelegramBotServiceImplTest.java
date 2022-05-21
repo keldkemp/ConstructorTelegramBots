@@ -8,6 +8,7 @@ import keldkemp.telegram.rest.mappers.TelegramMapper;
 import keldkemp.telegram.services.BeanFactoryService;
 import keldkemp.telegram.services.TransactionService;
 import keldkemp.telegram.services.UserService;
+import keldkemp.telegram.telegram.service.SchedulerService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,8 @@ public class TelegramBotServiceImplTest {
     BeanFactoryService telegramBeanFactory;
     @MockBean
     TransactionService transactionService;
+    @MockBean
+    SchedulerService schedulerService;
     @Autowired
     TelegramBotServiceImpl telegramBotServiceImpl;
 

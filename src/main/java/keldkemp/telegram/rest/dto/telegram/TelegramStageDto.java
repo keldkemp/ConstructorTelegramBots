@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -18,7 +19,9 @@ public class TelegramStageDto {
     private List<TelegramMessageDto> telegramMessages;
     private List<TelegramKeyboardDto> telegramKeyboards;
     private TelegramBotDto telegramBot;
-    private String frontOptions;
     private String frontPrefixReplace;
     private String frontNodeId;
+    private Boolean isScheduleActive;
+    private String scheduleCron;
+    private LocalDateTime scheduleDateTime;
 }

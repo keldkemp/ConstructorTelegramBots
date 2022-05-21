@@ -16,4 +16,10 @@ public class ExecutorConfiguration {
         ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("telegram-%d").build();
         return Executors.newFixedThreadPool(5, threadFactory);
     }
+
+    @Bean("telegramSchedulerThread")
+    public ExecutorService telegramSchedulerThread() {
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("tg-scheduler-%d").build();
+        return Executors.newFixedThreadPool(10, threadFactory);
+    }
 }
