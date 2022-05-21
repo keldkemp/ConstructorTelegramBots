@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -80,6 +81,7 @@ public class TelegramBotBeanServiceImpl extends BeanFactoryServiceImpl {
     }
 
     @EventListener(ApplicationReadyEvent.class)
+    @Transactional
     public void initAll() {
         List<TelegramBots> telegramBots = telegramBotsRepository.getTelegramBotsByIsActive(true);
         telegramBots.forEach(bot -> createBean(bot.getBotToken()));

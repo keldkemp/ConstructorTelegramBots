@@ -27,12 +27,15 @@ import keldkemp.telegram.services.BeanFactoryService;
 import keldkemp.telegram.services.TelegramBotService;
 import keldkemp.telegram.services.TransactionService;
 import keldkemp.telegram.services.UserService;
+import keldkemp.telegram.telegram.service.SchedulerService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.util.Asserts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,17 +87,22 @@ public class TelegramBotServiceImpl implements TelegramBotService {
     @Autowired
     private TransactionService transactionService;
 
+    @Autowired
+    private SchedulerService schedulerService;
+
     @Override
     public List<TelegramKeyboardTypes> getKeyboardTypes() {
         return tKeyboardTypesRepository.findAll();
     }
 
     @Override
+    @Transactional
     public List<TelegramBots> getBots() {
         return tBotsRepository.getTelegramBotsByUser(userService.getCurrentUser());
     }
 
     @Override
+    @Transactional
     public TelegramBots getBot(Long id) {
         TelegramBots bot = tBotsRepository.getById(id);
         checkUser(bot);
@@ -102,10 +110,15 @@ public class TelegramBotServiceImpl implements TelegramBotService {
     }
 
     @Override
+    @Transactional
     public TelegramBots save(TelegramBots bot) {
         bot.setUser(userService.getCurrentUser());
         validate(bot);
         TelegramBots saveBot;
+
+        if (!isNewBot(bot)) {
+            bot.setFrontOptions(getBot(bot.getId()).getFrontOptions());
+        }
 
         //Check Token
         if (isNewBot(bot)) {
@@ -151,8 +164,7 @@ public class TelegramBotServiceImpl implements TelegramBotService {
     @Transactional
     public TelegramStageTransferDto saveStages(TelegramStageTransferDto telegramTransferDto, Long botId) {
         HashMap<Long, TelegramStages> stagesHashMap = new HashMap<>();
-        TelegramBots bot = new TelegramBots();
-        bot.setId(botId);
+        TelegramBots bot = tBotsRepository.getById(botId);
         TelegramBotDto botDto = new TelegramBotDto();
         botDto.setId(botId);
         checkUser(bot);
@@ -166,17 +178,19 @@ public class TelegramBotServiceImpl implements TelegramBotService {
                 telegramStage.setPreviousStage(getStageByFictiveId(telegramTransferDto, stage.getPreviousStage()).getId());
             }
             telegramStage.setTelegramBot(bot);
-            telegramStage.setFrontOptions(stage.getFrontOptions());
             telegramStage.setFrontNodeId(stage.getFrontNodeId());
+            telegramStage.setIsScheduleActive(Boolean.TRUE == stage.getIsScheduleActive());
+            telegramStage.setScheduleCron(stage.getScheduleCron());
+            telegramStage.setScheduleDateTime(stage.getScheduleDateTime());
+
             telegramStage = tStagesRepository.saveAndFlush(telegramStage);
-            //Double save
+
             if (stage.getId() == null) {
-                String frontOptions = stage.getFrontOptions();
+                String frontOptions = bot.getFrontOptions();
                 if (frontOptions != null) {
                     frontOptions = frontOptions.replace(stage.getFrontPrefixReplace(), telegramStage.getId().toString());
                 }
-                telegramStage.setFrontOptions(frontOptions);
-                telegramStage = tStagesRepository.saveAndFlush(telegramStage);
+                bot.setFrontOptions(frontOptions);
             }
 
             stagesHashMap.put(telegramStage.getId(), telegramStage);
@@ -184,7 +198,7 @@ public class TelegramBotServiceImpl implements TelegramBotService {
             stage.setId(telegramStage.getId());
             stage.setTelegramBot(botDto);
             stage.setPreviousStage(telegramStage.getPreviousStage());
-            stage.setFrontOptions(telegramStage.getFrontOptions());
+            stage.setIsScheduleActive(telegramStage.getIsScheduleActive());
         });
 
         telegramTransferDto.getTelegramStages().forEach(stageDto -> {
@@ -256,11 +270,16 @@ public class TelegramBotServiceImpl implements TelegramBotService {
             }
         });
 
+        bot.setFrontOptions(telegramTransferDto.getFrontOptions());
+        tBotsRepository.saveAndFlush(bot);
+
         List<TelegramStages> stages = telegramMapper.toTelegramStagesPoFromDto(telegramTransferDto.getTelegramStages());
         deleteAnotherStages(stages, bot);
+        setSchedules(stages, bot);
 
         TelegramStageTransferDto stageTransferDto = new TelegramStageTransferDto();
         stageTransferDto.setTelegramStages(telegramMapper.toTelegramStagesDtoFromPo(stages));
+        stageTransferDto.setFrontOptions(bot.getFrontOptions());
         return stageTransferDto;
     }
 
@@ -344,6 +363,8 @@ public class TelegramBotServiceImpl implements TelegramBotService {
     }
 
     private void deleteAnotherStages(List<TelegramStages> stages, TelegramBots bot) {
+        tStagesRepository.getAllByIdNotInAndTelegramBot(stages.stream().map(TelegramStages::getId).toList(), bot)
+                .forEach(stage -> schedulerService.cancelStageSchedule(stage));
         List<Long> messageIds = new ArrayList<>();
         List<Long> keyboardIds = new ArrayList<>();
         List<Long> rowIds = new ArrayList<>();
@@ -400,5 +421,21 @@ public class TelegramBotServiceImpl implements TelegramBotService {
 
     private boolean isNewBot(TelegramBots bot) {
         return bot.getId() == null;
+    }
+
+    private void setSchedules(List<TelegramStages> stages, TelegramBots bot) {
+        stages.forEach(stage -> {
+            if (stage.getIsScheduleActive()) {
+                stage.setTelegramBot(bot);
+                schedulerService.handleStageSchedule(stage);
+            }
+        });
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void initAllSchedule() {
+        tStagesRepository.getAllByIsScheduleActiveAndTelegramBotIsActive(true, true)
+                .forEach(stage -> schedulerService.handleStageSchedule(stage));
     }
 }

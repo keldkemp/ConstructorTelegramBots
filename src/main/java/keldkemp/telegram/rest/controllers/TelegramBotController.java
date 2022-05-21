@@ -1,5 +1,6 @@
 package keldkemp.telegram.rest.controllers;
 
+import keldkemp.telegram.models.TelegramStages;
 import keldkemp.telegram.rest.dto.telegram.TelegramBotDto;
 import keldkemp.telegram.rest.dto.telegram.TelegramStageTransferDto;
 import keldkemp.telegram.rest.mappers.TelegramMapper;
@@ -45,7 +46,11 @@ public class TelegramBotController {
     @GetMapping("/{id}/stages")
     public TelegramStageTransferDto getStages(@PathVariable Long id) {
         TelegramStageTransferDto transferDto = new TelegramStageTransferDto();
-        transferDto.setTelegramStages(telegramMapper.toTelegramStagesDtoFromPo(telegramBotService.getStages(id)));
+        List<TelegramStages> stages = telegramBotService.getStages(id);
+        transferDto.setTelegramStages(telegramMapper.toTelegramStagesDtoFromPo(stages));
+        if (stages.size() > 0) {
+            transferDto.setFrontOptions(stages.get(0).getTelegramBot().getFrontOptions());
+        }
         return transferDto;
     }
 

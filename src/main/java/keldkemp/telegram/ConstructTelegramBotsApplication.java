@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import javax.annotation.PostConstruct;
 import java.text.NumberFormat;
+import java.util.TimeZone;
 
 @SpringBootApplication
 public class ConstructTelegramBotsApplication {
@@ -16,6 +18,12 @@ public class ConstructTelegramBotsApplication {
         beforeStart();
 
         SpringApplication.run(ConstructTelegramBotsApplication.class, args);
+    }
+
+    @PostConstruct
+    public void init(){
+        // Setting Spring Boot SetTimeZone
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     }
 
     protected static void beforeStart() {

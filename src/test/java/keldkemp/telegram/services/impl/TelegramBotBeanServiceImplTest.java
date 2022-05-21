@@ -6,6 +6,7 @@ import keldkemp.telegram.models.Users;
 import keldkemp.telegram.repositories.TelegramBotsRepository;
 import keldkemp.telegram.repositories.TelegramButtonsRepository;
 import keldkemp.telegram.repositories.TelegramStagesRepository;
+import keldkemp.telegram.repositories.TelegramUsersRepository;
 import keldkemp.telegram.telegram.config.WebHookBot;
 import keldkemp.telegram.telegram.handler.MessageHandler;
 import keldkemp.telegram.telegram.service.MessageService;
@@ -46,6 +47,8 @@ public class TelegramBotBeanServiceImplTest {
     TelegramStagesRepository tStagesRepository;
     @MockBean
     TelegramButtonsRepository tButtonsRepository;
+    @MockBean
+    TelegramUsersRepository tUsersRepository;
     @Autowired
     TelegramBotBeanServiceImpl telegramBotBeanServiceImpl;
     @Autowired

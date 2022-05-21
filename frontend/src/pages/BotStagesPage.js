@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useState} from "react";
 import {
     DiagramModel,
-    default as SRDDefault, DefaultNodeModel,
+    default as SRDDefault,
 } from '@projectstorm/react-diagrams';
 import {BotStages} from "../components/BotStages";
 import {StageApi} from "../api/StageApi";
@@ -14,7 +14,7 @@ export const BotStagesPage = () => {
     const [diagramEngine, setDiagramEngine] = useState(null);
     const [stages, setStages] = useState(null);
     const [types, setTypes] = useState(null);
-    const {saveStage, getStage, loading, clearError, error} = StageApi();
+    const {saveStage, getStage, loading, clearError} = StageApi();
     const {getKeyboardType} = TelegramKeyboardApi();
     const botId = useParams().id;
 
@@ -26,10 +26,8 @@ export const BotStagesPage = () => {
         const stages = await getStage(botId);
         const types = await getKeyboardType();
         const model = eng.getModel();
-        if (stages.telegram_stages.length > 0) {
-            if (stages.telegram_stages[0].front_options !== null) {
-                model.deserializeModel(JSON.parse(stages.telegram_stages[0].front_options), eng);
-            }
+        if (stages.telegram_stages.length > 0 && stages.front_options) {
+            model.deserializeModel(JSON.parse(stages.front_options), eng);
         }
 
         setDiagramEngine(eng);

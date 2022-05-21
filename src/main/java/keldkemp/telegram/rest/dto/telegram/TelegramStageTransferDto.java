@@ -9,5 +9,6 @@ import java.util.List;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class TelegramStageTransferDto {
-     List<TelegramStageDto> telegramStages;
+     private List<TelegramStageDto> telegramStages;
+     private String frontOptions;
 }

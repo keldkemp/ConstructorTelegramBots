@@ -72,9 +72,14 @@ export const StageType = {
         type: "Button",
         color: "rgb(119,88,2)",
     },
+    SCHEDULE: {
+        name: "Этап-уведомление",
+        type: "Schedule",
+        color: 'rgb(0,98,101)',
+    },
 
     getAll(): string[] {
-        return [StageType.START, StageType.END, StageType.STAGE];
+        return [StageType.START, StageType.END, StageType.STAGE, StageType.SCHEDULE];
     }
 }
 
@@ -129,10 +134,13 @@ export class BotStages extends React.Component<BotStagesProps> {
                 if (node.getOptions().extras.ident === StageType.BUTTON.type) {
                     delete this.state.buttons[node.getID()];
                 }
-                if (node.getOptions().extras.ident === StageType.STAGE.type) {
+                if (node.getOptions().extras.ident === StageType.STAGE.type || node.getOptions().extras.ident === StageType.SCHEDULE.type) {
                     Object.values(node.getPort("Keyboards").getLinks()).forEach(link => {
                         const localNode = link.getTargetPort().getNode();
                         Object.values(localNode.getPort("Buttons").getLinks()).forEach(button => {
+                            Object.values(button.getTargetPort().getNode().getPort("Out").getLinks()).forEach(link => {
+                                this.props.diagram.getModel().removeLink(link);
+                            })
                             this.props.diagram.getModel().removeNode(button.getTargetPort().getNode());
                             delete this.state.buttons[localNode.getID()];
                             this.props.diagram.getModel().removeLink(button);
@@ -162,15 +170,9 @@ export class BotStages extends React.Component<BotStagesProps> {
         if (data.type.type === StageType.START.type) {
             node = new DefaultNodeModel({name: data.type.name, color: data.type.color, extras: {ident: data.type.type, fictiveId: -Math.abs(nodesCount + 1)}});
             node.addOutPort('Out');
-            node.getOutPorts().forEach(port => {
-                port.setMaximumLinks(1);
-            });
         } else if (data.type.type === StageType.END.type) {
             node = new DefaultNodeModel({name: data.type.name, color: data.type.color, extras: {ident: data.type.type, fictiveId: -Math.abs(nodesCount + 1)}});
             node.addInPort('In');
-            node.getInPorts().forEach(port => {
-                port.setMaximumLinks(1);
-            });
         } else if (data.type.type === StageType.KEYBOARD.type) {
             node = new DefaultNodeModel({
                name: data.type.name + " " + nodesCount,
@@ -216,8 +218,10 @@ export class BotStages extends React.Component<BotStagesProps> {
             }
 
             if (node.getOptions().extras.ident === StageType.START.type) {
-                const nextId = Object.values(node.getPort('Out').getLinks())[0].getTargetPort().getParent().getID()
-                findNode({nodes, nodeId: nextId, previousNodeId: null, back, len: null});
+                Object.values(node.getPort('Out').getLinks()).forEach(start => {
+                    const nextId = start.getTargetPort().getParent().getID();
+                    findNode({nodes, nodeId: nextId, previousNodeId: null, back, len: null});
+                });
                 return;
             }
 
@@ -313,7 +317,7 @@ export class BotStages extends React.Component<BotStagesProps> {
                 return;
             }
 
-            if (node.getOptions().extras.ident === StageType.STAGE.type) {
+            if (node.getOptions().extras.ident === StageType.STAGE.type || node.getOptions().extras.ident === StageType.SCHEDULE.type) {
                 let check = false;
                 back.forEach(stage => {
                     if (stage.front_node_id === node.getID()) {
@@ -332,10 +336,11 @@ export class BotStages extends React.Component<BotStagesProps> {
                                 id: /^\d+$/.test(node.getOptions().extras.msgId) ? Number(node.getOptions().extras.msgId) : null,
                                 message_text: node.getOptions().extras.message
                             }],
-                            //front_options: JSON.stringify(node.serialize()),
-                            front_options: JSON.stringify(this.props.diagram.getModel().serialize()),
                             front_prefix_replace: "telegram_stage_id" + node.getID(),
                             front_node_id: node.getID(),
+                            is_schedule_active: node.getOptions().extras.ident === StageType.SCHEDULE.type,
+                            schedule_cron: node.getOptions().extras.ident === StageType.SCHEDULE.type ? node.getOptions().extras.cron : null,
+                            schedule_date_time: node.getOptions().extras.ident === StageType.SCHEDULE.type ? node.getOptions().extras.datetimeUTC : null,
                         }
                         findNode({
                             nodes,
@@ -355,10 +360,11 @@ export class BotStages extends React.Component<BotStagesProps> {
                                 id: /^\d+$/.test(node.getOptions().extras.msgId) ? Number(node.getOptions().extras.msgId) : null,
                                 message_text: node.getOptions().extras.message
                             }],
-                            //front_options: JSON.stringify(node.serialize()),
-                            front_options: JSON.stringify(this.props.diagram.getModel().serialize()),
                             front_prefix_replace: "telegram_stage_id" + node.getID(),
                             front_node_id: node.getID(),
+                            is_schedule_active: node.getOptions().extras.ident === StageType.SCHEDULE.type,
+                            schedule_cron: node.getOptions().extras.ident === StageType.SCHEDULE.type ? node.getOptions().extras.cron : null,
+                            schedule_date_time: node.getOptions().extras.ident === StageType.SCHEDULE.type ? node.getOptions().extras.datetimeUTC : null,
                         };
 
                     }
@@ -383,6 +389,7 @@ export class BotStages extends React.Component<BotStagesProps> {
 
           const data = {
               telegram_stages: nodesForBack,
+              front_options: JSON.stringify(this.props.diagram.getModel().serialize()),
           };
 
           let returnData;
@@ -431,6 +438,13 @@ export class BotStages extends React.Component<BotStagesProps> {
                             return type;
                         }
                     });
+                } else if (event.target.name === 'datetime') {
+                    newNode.getOptions().extras['datetimeUTC'] = new Date(event.target.value).toJSON();
+                    newNode.getOptions().extras[event.target.name] = event.target.value;
+                    newNode.getOptions().extras['cron'] = null;
+                } else if (event.target.name === 'cron') {
+                    newNode.getOptions().extras[event.target.name] = event.target.value;
+                    newNode.getOptions().extras['datetimeUTC'] = null;
                 } else {
                     newNode.getOptions().extras[event.target.name] = event.target.value;
                 }
@@ -556,7 +570,7 @@ export class BotStages extends React.Component<BotStagesProps> {
                         <CanvasWidget engine={this.props.diagram} />
                     </DemoCanvasWidget>
                 </S.Layer>
-                {this.state.isMenuOpen && this.state.selectedNode.getOptions().extras.ident === StageType.STAGE.type ? (
+                {this.state.isMenuOpen && (this.state.selectedNode.getOptions().extras.ident === StageType.STAGE.type || this.state.selectedNode.getOptions().extras.ident === StageType.SCHEDULE.type) ? (
                     <div className="row">
                         <div className="col s24" style={{height: '100%'}}>
                             <div className="card grey lighten-4"  style={{height: '100%'}}>
@@ -573,7 +587,35 @@ export class BotStages extends React.Component<BotStagesProps> {
                                             <textarea style={{resize: "none", height: 150}} name='message' value={this.state.selectedNode.getOptions().extras.message || ''}
                                                    onChange={onChangeOptions}/>
                                         </form-group>
-                                        <form-grop>
+                                        {this.state.selectedNode.getOptions().extras.ident === StageType.SCHEDULE.type ? (
+                                            <form-group>
+                                                <label>Многократное повторение?</label>
+                                                <select name="executeManyTimes" id="executeManyTimes"
+                                                        value={this.state.selectedNode.getOptions().extras.executeManyTimes || ''}
+                                                        onChange={onChangeOptions} style={{display: "block"}}>
+                                                    <option value="null"></option>
+                                                    <option value="Да">Да</option>
+                                                    <option value="Нет">Нет</option>
+                                                </select>
+                                            </form-group>
+                                        ) : null}
+                                        {this.state.selectedNode.getOptions().extras.ident === StageType.SCHEDULE.type
+                                        && this.state.selectedNode.getOptions().extras.executeManyTimes === 'Нет' ? (
+                                            <form-group>
+                                                <label>Дата</label>
+                                                <input type="datetime-local" name='datetime' value={this.state.selectedNode.getOptions().extras.datetime || ''}
+                                                       onChange={onChangeOptions}/>
+                                            </form-group>
+                                        ) : this.state.selectedNode.getOptions().extras.ident === StageType.SCHEDULE.type
+                                        && this.state.selectedNode.getOptions().extras.executeManyTimes === 'Да' ? (
+                                            <form-group>
+                                                <label>Крон</label>
+                                                <input type="text" name='cron' value={this.state.selectedNode.getOptions().extras.cron || ''}
+                                                       placeholder='секунду минута час день месяц день_в_недели'
+                                                       onChange={onChangeOptions}/>
+                                            </form-group>
+                                        ): null}
+                                        <form-group>
                                             <label>Клавиатура</label>
                                             <br/>
                                             {this.state.keyboards[this.state.selectedNode.getID()] !== undefined ? (
@@ -583,7 +625,7 @@ export class BotStages extends React.Component<BotStagesProps> {
                                                     </tbody>
                                                 </table>
                                             ) : <button className="waves-effect waves-light btn" onClick={addKeyboard} disabled={this.state.loading}>Добавить клавиатуру</button>}
-                                        </form-grop>
+                                        </form-group>
                                     </form>
                                 </div>
                             </div>
