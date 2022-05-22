@@ -1,6 +1,8 @@
 package keldkemp.telegram.telegram.config;
 
 import keldkemp.telegram.telegram.handler.MessageHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.bots.TelegramWebhookBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -11,6 +13,8 @@ import java.util.concurrent.ExecutorService;
 
 
 public class WebHookBot extends TelegramWebhookBot {
+
+    Logger logger = LoggerFactory.getLogger(WebHookBot.class);
 
     private final String botToken;
     private final String botPath;
@@ -71,8 +75,8 @@ public class WebHookBot extends TelegramWebhookBot {
         messages.forEach(message -> {
             try {
                 execute(message);
-            } catch (Exception ignored) {
-
+            } catch (Exception e) {
+                logger.error("Error while executing message in schedule", e);
             }
         });
     }
