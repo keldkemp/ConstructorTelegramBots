@@ -7,15 +7,20 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 @Entity
+@Table(uniqueConstraints =
+    @UniqueConstraint(columnNames = {"user_id", "telegram_bot_id"})
+)
 public class TelegramUsers {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "t_users_seq")
     private Long id;
 
-    @Column(name = "user_id", unique = true)
+    @Column(name = "user_id")
     private Long tgUserId;
 
     @Column(name = "user_name")

@@ -10,5 +10,5 @@ public interface TelegramUsersRepository extends JpaRepository<TelegramUsers, Lo
 
     List<TelegramUsers> getAllByTelegramBot(TelegramBots telegramBot);
 
-    TelegramUsers getByTgUserId(Long userId);
+    TelegramUsers getByTgUserIdAndTelegramBot(Long userId, TelegramBots telegramBot);
 }

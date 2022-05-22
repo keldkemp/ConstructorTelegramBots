@@ -112,7 +112,7 @@ public class MessageHandler {
     private void saveUser(Message message, TelegramBots bot) {
         Chat chat = message.getChat();
 
-        TelegramUsers user = tUsersRepository.getByTgUserId(chat.getId());
+        TelegramUsers user = tUsersRepository.getByTgUserIdAndTelegramBot(chat.getId(), bot);
         if (user == null) {
             user = new TelegramUsers();
         }
