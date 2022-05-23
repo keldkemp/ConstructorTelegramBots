@@ -76,7 +76,12 @@ public class MessageServiceImpl implements MessageService {
         List<String> newText = new ArrayList<>();
         newText.add(text);
 
-        CONST_VARIABLE.forEach((k, v) -> newText.set(0, newText.get(0).replace(k, getInfoInTelegramMessage(tMessage, v))));
+        CONST_VARIABLE.forEach((k, v) -> {
+            String info = getInfoInTelegramMessage(tMessage, v);
+            if (info != null) {
+                newText.set(0, newText.get(0).replace(k, info));
+            }
+        });
         return newText.get(0);
     }
 
